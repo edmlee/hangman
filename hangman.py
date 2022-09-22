@@ -16,13 +16,10 @@ class Hangman():
         self.window.columnconfigure(0, weight=1)
 
         self.word_list = self.load_word_list()
-        self.word_frame = self.create_word_frame()
-        self.keyboard_frame = self.create_keyboard_frame()
-        self.side_frame = self.create_side_frame()
+        self.create_frames()
         self.create_keyboard_buttons()
         self.create_side_buttons()
-        self.create_word_label()
-        self.create_stats_label()
+        self.create_labels()
         self.play_game()
 
 
@@ -33,29 +30,22 @@ class Hangman():
                 word_list = file.readlines()
             for word in word_list:
                 word = word.rstrip("\n").upper()
-                if len(word) >= 3:
+                if len(word) >= MIN_WORD_LENGTH:
                     words.append(word)
         except:
             print("Missing file")
         return words
 
 
-    def create_word_frame(self):
-        frame = ck.CTkFrame(self.window, fg_color=BACKGROUND_COLOR)
-        frame.grid(row=0, column=0, sticky="nesw")
-        return frame
+    def create_frames(self):
+        self.word_frame = ck.CTkFrame(self.window, fg_color=BACKGROUND_COLOR)
+        self.word_frame.grid(row=0, column=0, sticky="nesw")
 
+        self.keyboard_frame = ck.CTkFrame(self.window, fg_color=BACKGROUND_COLOR)
+        self.keyboard_frame.grid(row=1, column=0, sticky="nesw")
 
-    def create_keyboard_frame(self):
-        frame = ck.CTkFrame(self.window, fg_color=BACKGROUND_COLOR)
-        frame.grid(row=1, column=0, sticky="nesw")
-        return frame
-
-
-    def create_side_frame(self):
-        frame = ck.CTkFrame(self.window, fg_color=SIDE_BAR_COLOR)
-        frame.grid(row=0, column=1, rowspan=2, sticky="nesw")
-        return frame
+        self.side_frame = ck.CTkFrame(self.window, fg_color=SIDE_BAR_COLOR)
+        self.side_frame.grid(row=0, column=1, rowspan=2, sticky="nesw")
 
 
     def create_button(self, frame, text, row, column, font, command):
@@ -72,35 +62,37 @@ class Hangman():
             if column == len(ALPHABET) / 2:
                 row += 1
                 column = 0
-            button = self.create_button(self.keyboard_frame, text=letter, row=row, column=column,
-                               font=KEYBOARD_FONT, command= lambda letter=letter: self.update_word(letter))
+            button = self.create_button(self.keyboard_frame, text=letter, row=row, column=column, font=KEYBOARD_FONT, 
+                                        command= lambda letter=letter: self.update_word(letter))
             button.configure(height=BUTTON_HEIGHT)
             self.keyboard_frame.columnconfigure(column, weight=1)
             column += 1
 
 
     def create_side_buttons(self):
-        new_game_button = self.create_button(self.side_frame, text="New Game", row=0, column=0, font=KEYBOARD_FONT, command=self.play_game)
+        new_game_button = self.create_button(self.side_frame, text="New Game", row=0, column=0, 
+                                             font=KEYBOARD_FONT, command=self.play_game)
         new_game_button.configure(fg_color=GREEN, text_color=INNER_TEXT_COLOR, hover_color=GREEN_HOVER_COLOR)
         
-        quit_button = self.create_button(self.side_frame, text="Quit", row=5, column=0, font=KEYBOARD_FONT, command=self.window.quit)
+        quit_button = self.create_button(self.side_frame, text="Quit", row=5, column=0, 
+                                         font=KEYBOARD_FONT, command=self.window.quit)
         quit_button.configure(fg_color=RED, text_color=INNER_TEXT_COLOR, hover_color=RED_HOVER_COLOR)
 
 
-    def create_word_label(self):
+    def create_labels(self):
         self.word_variable = ck.StringVar()
-        label = ck.CTkLabel(self.word_frame, textvariable=self.word_variable, text_font=WORD_FONT)
-        label.grid(row=0, column=0)
-        label.place(relx=0.5, rely=0.5, anchor=ck.CENTER)
+        self.lives_variable = ck.IntVar()
+        self.lives_variable.set(NUMBER_OF_LIVES)
 
+        word_label = ck.CTkLabel(self.word_frame, textvariable=self.word_variable, text_font=WORD_FONT)
+        word_label.grid(row=0, column=0)
+        word_label.place(relx=0.5, rely=0.5, anchor=ck.CENTER)
 
-    def create_stats_label(self):
         lives_text_label = ck.CTkLabel(self.side_frame, width=1, text=f"Lives: ", text_font=KEYBOARD_FONT)
         lives_text_label.grid(row=1, column=0, padx=30, pady=20, sticky="w")
         
-        self.lives_variable = ck.IntVar()
-        self.lives_variable.set(NUMBER_OF_LIVES)
-        lives_label = ck.CTkLabel(self.side_frame, width=1, textvariable=self.lives_variable, text_font=KEYBOARD_FONT, anchor=ck.CENTER)
+        lives_label = ck.CTkLabel(self.side_frame, width=1, textvariable=self.lives_variable, 
+                                  text_font=KEYBOARD_FONT, anchor=ck.CENTER)
         lives_label.grid(row=1, column=0, padx=(0, 30), pady=20, sticky="e")
 
 
@@ -125,6 +117,10 @@ class Hangman():
 
 
     def update_lives(self):
+        pass
+
+
+    def select_difficulty(self):
         pass
 
 
