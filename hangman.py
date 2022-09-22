@@ -15,7 +15,12 @@ class Hangman():
         self.window.rowconfigure(0, weight=1)
         self.window.columnconfigure(0, weight=1)
 
-        self.word_list = self.load_word_list()
+        self.word_list = []
+        self.word_variable = ck.StringVar()
+        self.used_letters = set()
+        self.status = STATUS[0]
+
+        self.load_word_list()
         self.create_frames()
         self.create_keyboard_buttons()
         self.create_side_buttons()
@@ -24,17 +29,15 @@ class Hangman():
 
 
     def load_word_list(self):
-        words = []
         try:
             with open("word_list.txt", "r") as file:
-                word_list = file.readlines()
-            for word in word_list:
+                words = file.readlines()
+            for word in words:
                 word = word.rstrip("\n").upper()
                 if len(word) >= MIN_WORD_LENGTH:
-                    words.append(word)
+                    self.word_list.append(word)
         except:
             print("Missing file")
-        return words
 
 
     def create_frames(self):
@@ -70,33 +73,30 @@ class Hangman():
 
 
     def create_side_buttons(self):
-        new_game_button = self.create_button(self.side_frame, text="New Game", row=0, column=0, 
+        self.new_game_button = self.create_button(self.side_frame, text="New Game", row=0, column=0, 
                                              font=KEYBOARD_FONT, command=self.play_game)
-        new_game_button.configure(fg_color=GREEN, text_color=INNER_TEXT_COLOR, hover_color=GREEN_HOVER_COLOR)
+        self.new_game_button.configure(fg_color=GREEN, text_color=INNER_TEXT_COLOR, hover_color=GREEN_HOVER_COLOR)
         
-        quit_button = self.create_button(self.side_frame, text="Quit", row=5, column=0, 
+        self.quit_button = self.create_button(self.side_frame, text="Quit", row=5, column=0, 
                                          font=KEYBOARD_FONT, command=self.window.quit)
-        quit_button.configure(fg_color=RED, text_color=INNER_TEXT_COLOR, hover_color=RED_HOVER_COLOR)
+        self.quit_button.configure(fg_color=RED, text_color=INNER_TEXT_COLOR, hover_color=RED_HOVER_COLOR)
 
 
     def create_labels(self):
-        self.word_variable = ck.StringVar()
-        self.lives_variable = ck.IntVar()
-        self.lives_variable.set(NUMBER_OF_LIVES)
+        self.lives = NUMBER_OF_LIVES
 
-        word_label = ck.CTkLabel(self.word_frame, textvariable=self.word_variable, text_font=WORD_FONT)
-        word_label.grid(row=0, column=0)
-        word_label.place(relx=0.5, rely=0.5, anchor=ck.CENTER)
+        self.word_label = ck.CTkLabel(self.word_frame, textvariable=self.word_variable, text_font=WORD_FONT)
+        self.word_label.grid(row=0, column=0)
+        self.word_label.place(relx=0.5, rely=0.5, anchor=ck.CENTER)
 
-        lives_text_label = ck.CTkLabel(self.side_frame, width=1, text=f"Lives: ", text_font=KEYBOARD_FONT)
-        lives_text_label.grid(row=1, column=0, padx=30, pady=20, sticky="w")
-        
-        lives_label = ck.CTkLabel(self.side_frame, width=1, textvariable=self.lives_variable, 
-                                  text_font=KEYBOARD_FONT, anchor=ck.CENTER)
-        lives_label.grid(row=1, column=0, padx=(0, 30), pady=20, sticky="e")
+        self.lives_text_label = ck.CTkLabel(self.side_frame, width=1, text=f"Lives: {self.lives}", text_font=KEYBOARD_FONT)
+        self.lives_text_label.grid(row=1, column=0, pady=20)
 
 
     def play_game(self):
+        self.status = STATUS[0]
+        self.lives = NUMBER_OF_LIVES
+        self.lives_text_label.configure(text=f"Lives: {self.lives}")
         self.secret_word = random.choice(self.word_list)
         word = "_ " * len(self.secret_word)
         self.word_variable.set(word.strip())
@@ -109,16 +109,22 @@ class Hangman():
             if letter == char:
                 word[index] = letter
         self.word_variable.set(" ".join(word))
-        return
+        self.update_lives(word, letter)
 
 
-    def used_letters(self):
-        pass
-
-
-    def update_lives(self):
-        pass
-
+    def update_lives(self, word, letter):
+        if letter not in self.used_letters and self.status == STATUS[0]:
+            self.used_letters.add(letter)
+            if letter not in self.secret_word:
+                self.lives -= 1
+            self.lives_text_label.configure(text=f"Lives: {self.lives}")
+            print(self.used_letters)
+        if self.lives == 0:
+            self.status = STATUS[1]
+            print(self.status)
+        if set(word).issubset(self.used_letters):
+            self.status = STATUS[2]
+            print(self.status)
 
     def select_difficulty(self):
         pass
