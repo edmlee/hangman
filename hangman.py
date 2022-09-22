@@ -19,6 +19,7 @@ class Hangman():
         self.word_variable = ck.StringVar()
         self.used_letters = set()
         self.status = STATUS[0]
+        self.keyboard_buttons = {}
 
         self.load_word_list()
         self.create_frames()
@@ -61,15 +62,17 @@ class Hangman():
     def create_keyboard_buttons(self):
         row = 0
         column = 0
+        i = 0
         for letter in ALPHABET:
             if column == len(ALPHABET) / 2:
                 row += 1
                 column = 0
-            button = self.create_button(self.keyboard_frame, text=letter, row=row, column=column, font=KEYBOARD_FONT, 
-                                        command= lambda letter=letter: self.update_word(letter))
-            button.configure(height=BUTTON_HEIGHT)
+            self.keyboard_buttons[i] = self.create_button(self.keyboard_frame, text=letter, row=row, column=column, font=KEYBOARD_FONT, 
+                                                          command= lambda letter=letter: self.update_word(letter))
+            self.keyboard_buttons[i].configure(height=BUTTON_HEIGHT)
             self.keyboard_frame.columnconfigure(column, weight=1)
             column += 1
+            i += 1
 
 
     def create_side_buttons(self):
@@ -92,11 +95,17 @@ class Hangman():
         self.lives_text_label = ck.CTkLabel(self.side_frame, width=1, text=f"Lives: {self.lives}", text_font=KEYBOARD_FONT)
         self.lives_text_label.grid(row=1, column=0, pady=20)
 
-
-    def play_game(self):
+    
+    def new_game(self):
         self.status = STATUS[0]
         self.lives = NUMBER_OF_LIVES
         self.lives_text_label.configure(text=f"Lives: {self.lives}")
+        for keys in self.keyboard_buttons:
+            self.keyboard_buttons[keys].configure(state=ck.NORMAL)
+
+
+    def play_game(self):
+        self.new_game()        
         self.secret_word = random.choice(self.word_list)
         word = "_ " * len(self.secret_word)
         self.word_variable.set(word.strip())
@@ -122,9 +131,13 @@ class Hangman():
         if self.lives == 0:
             self.status = STATUS[1]
             print(self.status)
-        if set(word).issubset(self.used_letters):
+        elif set(word).issubset(self.used_letters):
             self.status = STATUS[2]
             print(self.status)
+        if self.status == STATUS[1] or self.status == STATUS[2]:
+            for keys in self.keyboard_buttons:
+                self.keyboard_buttons[keys].configure(state=ck.DISABLED)
+
 
     def select_difficulty(self):
         pass
