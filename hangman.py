@@ -3,7 +3,7 @@ import customtkinter as ck
 import random
 
 
-class Hangman():
+class Initialization():
     def __init__(self):
         ck.set_appearance_mode("dark")
         ck.set_default_color_theme("blue")
@@ -22,33 +22,18 @@ class Hangman():
         self.used_letters = set()
         self.word_variable = ck.StringVar()
         self.result_variable = ck.StringVar(value="")
-        self.display_difficulty = ck.StringVar(value="Normal")
-        self.selected_difficulty = ck.StringVar(value="Normal")
+        self.current_difficulty = ck.StringVar(value="Normal")
+        self.new_difficulty = ck.StringVar(value="Normal")
         self.custom_min_var = ck.StringVar(value=DIFFICULTY[self.custom][0])
         self.custom_max_var = ck.StringVar(value=DIFFICULTY[self.custom][1])
         self.status = STATUS[0]
 
-        self.load_word_list()
-        self.create_frames()
-        self.create_keyboard_buttons()
-        self.create_side_buttons()
-        self.create_labels()
-        self.create_result_label()
-        self.play_game()
-        self.difficulty_window()
 
+class MainWindow(Initialization):
+    def __init__(self):
+        super().__init__()
 
-    def load_word_list(self):
-        try:
-            with open("word_list.txt", "r") as file:
-                words = file.readlines()
-            for word in words:
-                word = word.rstrip("\n").upper()
-                self.word_list.append(word)
-        except:
-            print("Missing file")
-
-
+        
     def create_frames(self):
         self.word_frame = ck.CTkFrame(self.window, fg_color=BACKGROUND_COLOR)
         self.word_frame.grid(row=0, column=0, sticky="nesw")
@@ -66,6 +51,51 @@ class Hangman():
                               command=command)
         button.grid(row=row, column=column)
         return button
+
+
+    def create_keyboard_buttons(self):
+        row, column = 0, 0
+        for letter in ALPHABET:
+            if column == len(ALPHABET) / 2:
+                row += 1
+                column = 0
+            self.keyboard_buttons[letter] = self.create_button(self.keyboard_frame,
+                                                               text=letter, 
+                                                               row=row, column=column,
+                                                               font=KEYBOARD_FONT, 
+                                                               command= lambda letter=letter: 
+                                                               self.update_word(letter))
+            self.keyboard_buttons[letter].configure(height=BUTTON_HEIGHT)
+            self.keyboard_frame.columnconfigure(column, weight=1)
+            column += 1
+
+
+    def create_side_buttons(self):
+        new_game_button = self.create_button(self.side_frame, text="New Game", 
+                                             row=0, column=0, font=KEYBOARD_FONT, 
+                                             command=self.play_game)
+        new_game_button.configure(fg_color=GREEN, text_color=INNER_TEXT_COLOR, 
+                                  hover_color=GREEN_HOVER_COLOR)
+        new_game_button.grid_configure(pady=(10, 0))  
+
+        difficulty_button = self.create_button(self.side_frame, text="Change\nDifficulty", 
+                                               row=4, column=0, font=KEYBOARD_FONT, 
+                                               command=self.difficulty_window)
+        difficulty_button.configure(fg_color=DIFFICULTY_COLOR, text_color=INNER_TEXT_COLOR, 
+                                    hover_color=DIFFICULTY_COLOR)
+        difficulty_button.grid_configure(pady=(0, 15))
+
+        quit_button = self.create_button(self.side_frame, text="Quit",
+                                         row=5, column=0, 
+                                         font=KEYBOARD_FONT, 
+                                         command=self.window.quit)
+        quit_button.configure(fg_color=RED, text_color=INNER_TEXT_COLOR, 
+                              hover_color=RED_HOVER_COLOR)
+
+
+class SettingsWindow(MainWindow):
+    def __init__(self):
+        super().__init__()
 
 
     def difficulty_window(self):
@@ -91,48 +121,6 @@ class Hangman():
         self.current_max = self.custom_max_var.get()
         
 
-    def create_keyboard_buttons(self):
-        row, column = 0, 0
-        for letter in ALPHABET:
-            if column == len(ALPHABET) / 2:
-                row += 1
-                column = 0
-            self.keyboard_buttons[letter] = self.create_button(self.keyboard_frame,
-                                                               text=letter, 
-                                                               row=row, column=column,
-                                                               font=KEYBOARD_FONT, 
-                                                               command= lambda letter=letter: 
-                                                               self.update_word(letter))
-            self.keyboard_buttons[letter].configure(height=BUTTON_HEIGHT)
-            self.keyboard_frame.columnconfigure(column, weight=1)
-            column += 1
- 
-
-    def create_side_buttons(self):
-        new_game_button = self.create_button(self.side_frame, text="New Game", 
-                                                  row=0, column=0, font=KEYBOARD_FONT, 
-                                                  command=self.play_game)
-        new_game_button.configure(fg_color=GREEN, text_color=INNER_TEXT_COLOR, 
-                                       hover_color=GREEN_HOVER_COLOR)
-        new_game_button.grid_configure(pady=(10, 0))  
-
-        difficulty_button = self.create_button(self.side_frame, 
-                                                    text="Change\nDifficulty", 
-                                                    row=4, column=0, font=KEYBOARD_FONT, 
-                                                    command=self.difficulty_window)
-        difficulty_button.configure(fg_color=DIFFICULTY_COLOR, 
-                                         text_color=INNER_TEXT_COLOR, 
-                                         hover_color=DIFFICULTY_COLOR)
-        difficulty_button.grid_configure(pady=(0, 15))
-
-        quit_button = self.create_button(self.side_frame, text="Quit",
-                                              row=5, column=0, 
-                                              font=KEYBOARD_FONT, 
-                                              command=self.window.quit)
-        quit_button.configure(fg_color=RED, text_color=INNER_TEXT_COLOR, 
-                                   hover_color=RED_HOVER_COLOR)
-
-
     def create_radio_buttons(self):
         for key in DIFFICULTY.keys():
             min_length = DIFFICULTY[key][0]
@@ -142,38 +130,11 @@ class Hangman():
             else: text = f"{key}: "
 
             difficulty_radio = ck.CTkRadioButton(self.difficulty_window, 
-                                                      text=text, 
-                                                      variable=self.selected_difficulty, 
-                                                      value=key, 
-                                                      text_font=DIFFICULTY_FONT,
-                                                      command=self.track_difficulty)
+                                                 text=text, value=key,
+                                                 variable=self.new_difficulty, 
+                                                 text_font=DIFFICULTY_FONT,
+                                                 command=self.track_difficulty)
             difficulty_radio.grid(padx=20, pady=5, sticky="w")
-
-
-    def create_labels(self):
-        self.lives = NUMBER_OF_LIVES
-
-        word_label = ck.CTkLabel(self.word_frame, textvariable=self.word_variable, 
-                                 text_font=WORD_FONT)
-        word_label.grid(row=0, column=0)
-        word_label.place(relx=0.5, rely=0.5, anchor=ck.CENTER)
-
-        self.lives_text_label = ck.CTkLabel(self.side_frame, 
-                                            text=f"Lives: {self.lives}", 
-                                            text_font=KEYBOARD_FONT)
-        self.lives_text_label.grid(row=1, column=0, pady=30)
-
-        difficulty_label = ck.CTkLabel(self.side_frame, 
-                                            textvariable=self.display_difficulty, 
-                                            text_font=KEYBOARD_FONT)
-        difficulty_label.grid(row=3, column=0, padx=10, pady=(0, 20))
-
-
-    def create_result_label(self):
-        self.result_label = ck.CTkLabel(self.word_frame, textvariable=self.result_variable,
-                                        text_font=RESULT_FONT, text_color=BACKGROUND_COLOR)
-        self.result_label.grid(row=0, column=0)
-        self.result_label.place(relx=0.5, rely=0.8, anchor=ck.CENTER)
 
 
     def create_option_menu(self, variable, length, column, command):
@@ -183,7 +144,7 @@ class Hangman():
         option_menu.grid(row=4, column=column)
         return option_menu
 
-    
+
     def create_custom_option(self):
         row, column = 5, 0
         length = [str(num) for num in range(1, MAX_WORD_LENGTH+1)]
@@ -205,6 +166,53 @@ class Hangman():
                                   text_font=DIFFICULTY_FONT)
         custom_text.grid(padx=265, row=row, column=column, sticky="w")
 
+
+class Labels(SettingsWindow):
+    def __init__(self):
+        super().__init__()
+
+
+    def create_labels(self):
+        self.lives = NUMBER_OF_LIVES
+
+        word_label = ck.CTkLabel(self.word_frame, textvariable=self.word_variable, 
+                                 text_font=WORD_FONT)
+        word_label.grid(row=0, column=0)
+        word_label.place(relx=0.5, rely=0.5, anchor=ck.CENTER)
+
+        self.lives_text_label = ck.CTkLabel(self.side_frame, 
+                                            text=f"Lives: {self.lives}", 
+                                            text_font=KEYBOARD_FONT)
+        self.lives_text_label.grid(row=1, column=0, pady=30)
+
+        difficulty_label = ck.CTkLabel(self.side_frame, 
+                                       textvariable=self.current_difficulty, 
+                                       text_font=KEYBOARD_FONT)
+        difficulty_label.grid(row=3, column=0, padx=10, pady=(0, 20))
+
+
+    def create_result_label(self):
+        self.result_label = ck.CTkLabel(self.word_frame, textvariable=self.result_variable,
+                                        text_font=RESULT_FONT, text_color=BACKGROUND_COLOR)
+        self.result_label.grid(row=0, column=0)
+        self.result_label.place(relx=0.5, rely=0.8, anchor=ck.CENTER)
+
+
+class Play(Labels):
+    def __init__(self):
+        super().__init__()
+
+    
+    def load_word_list(self):
+        try:
+            with open("word_list.txt", "r") as file:
+                words = file.readlines()
+            for word in words:
+                word = word.rstrip("\n").upper()
+                self.word_list.append(word)
+        except:
+            print("Missing file")
+
     
     def play_game(self):
         self.initialize_game()
@@ -224,8 +232,8 @@ class Hangman():
 
     def get_word(self):
         for word in self.word_list:
-            if (len(word) >= DIFFICULTY[self.display_difficulty.get()][0]
-                    and len(word) <= DIFFICULTY[self.display_difficulty.get()][1]):
+            if (len(word) >= DIFFICULTY[self.current_difficulty.get()][0]
+                    and len(word) <= DIFFICULTY[self.current_difficulty.get()][1]):
                 self.new_word_list.append(word)
         self.secret_word = random.choice(self.new_word_list)
         new_word = "_ " * len(self.secret_word)
@@ -277,8 +285,8 @@ class Hangman():
 
 
     def set_difficulty(self):
-        if self.display_difficulty.get() != self.selected_difficulty.get():
-            self.display_difficulty.set(self.selected_difficulty.get())
+        if self.current_difficulty.get() != self.new_difficulty.get():
+            self.current_difficulty.set(self.new_difficulty.get())
             self.play_game()
         elif (self.current_min != self.custom_min_var.get() or
                 self.current_max != self.custom_max_var.get()):
@@ -289,7 +297,7 @@ class Hangman():
 
 
     def track_difficulty(self):
-        if self.selected_difficulty.get() != self.custom:
+        if self.new_difficulty.get() != self.custom:
             self.custom_min.configure(state=ck.DISABLED)
             self.custom_max.configure(state=ck.DISABLED)
         else:
@@ -308,6 +316,19 @@ class Hangman():
         length = [str(num) for num in range(1, int(choice)+1)]
         self.custom_min.configure(values=length)
 
+
+class Hangman(Play):
+    def __init__(self):
+        super().__init__()
+        self.load_word_list()
+        self.create_frames()
+        self.create_keyboard_buttons()
+        self.create_side_buttons()
+        self.create_labels()
+        self.create_result_label()
+        self.difficulty_window()
+        self.play_game()
+        
 
 if __name__ == "__main__":
     hangman = Hangman()

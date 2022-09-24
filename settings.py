@@ -36,3 +36,4 @@ DIFFICULTY = {
               "Custom": [3, 18]
               }
 NUMBER_OF_LIVES = 8
+CUSTOM_LIVES = (1, 100)
