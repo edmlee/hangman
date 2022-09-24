@@ -18,13 +18,14 @@ class Hangman():
         self.word_list = []
         self.new_word_list = []
         self.keyboard_buttons = {}
+        self.custom = "Custom"
         self.used_letters = set()
         self.word_variable = ck.StringVar()
         self.result_variable = ck.StringVar(value="")
         self.display_difficulty = ck.StringVar(value="Normal")
         self.selected_difficulty = ck.StringVar(value="Normal")
-        self.custom_variable_min = ck.StringVar(value=DIFFICULTY["Custom"][0])
-        self.custom_variable_max = ck.StringVar(value=DIFFICULTY["Custom"][1])
+        self.custom_min_var = ck.StringVar(value=DIFFICULTY[self.custom][0])
+        self.custom_max_var = ck.StringVar(value=DIFFICULTY[self.custom][1])
         self.status = STATUS[0]
 
         self.load_word_list()
@@ -34,6 +35,7 @@ class Hangman():
         self.create_labels()
         self.create_result_label()
         self.play_game()
+        self.difficulty_window()
 
 
     def load_word_list(self):
@@ -76,18 +78,21 @@ class Hangman():
         label.grid(padx=10, pady=20, sticky="w")
         self.create_radio_buttons()
         self.create_custom_option()
+        self.track_difficulty()
 
         save_button = self.create_button(self.difficulty_window, text="Save",
-                                         row=5, column=0, font=KEYBOARD_FONT,
+                                         row=6, column=0, font=KEYBOARD_FONT,
                                          command=self.set_difficulty)
         save_button.configure(fg_color=GREEN, text_color=INNER_TEXT_COLOR, 
                               hover_color=GREEN_HOVER_COLOR)
-        save_button.grid_configure(padx=55, pady=20)
+        save_button.grid_configure(padx=130, pady=20, sticky="w")
 
+        self.current_min = self.custom_min_var.get()
+        self.current_max = self.custom_max_var.get()
+        
 
     def create_keyboard_buttons(self):
-        row = 0
-        column = 0
+        row, column = 0, 0
         for letter in ALPHABET:
             if column == len(ALPHABET) / 2:
                 row += 1
@@ -132,7 +137,7 @@ class Hangman():
         for key in DIFFICULTY.keys():
             min_length = DIFFICULTY[key][0]
             max_length = DIFFICULTY[key][1]
-            if key != "Custom":
+            if key != self.custom:
                 text = f"{key}:  {min_length}-{max_length} letter word"
             else: text = f"{key}: "
 
@@ -140,7 +145,8 @@ class Hangman():
                                                       text=text, 
                                                       variable=self.selected_difficulty, 
                                                       value=key, 
-                                                      text_font=DIFFICULTY_FONT)
+                                                      text_font=DIFFICULTY_FONT,
+                                                      command=self.track_difficulty)
             difficulty_radio.grid(padx=20, pady=5, sticky="w")
 
 
@@ -179,22 +185,25 @@ class Hangman():
 
     
     def create_custom_option(self):
-        length = [str(number) for number in range(1, MAX_WORD_LENGTH+1)]
-        custom_min = self.create_option_menu(variable=self.custom_variable_min, length=length,
-                                             column=0, command=self.set_custom_option_min)
-        custom_min.grid_configure(padx=120, row=4, column=0, sticky="w")
+        row, column = 5, 0
+        length = [str(num) for num in range(1, MAX_WORD_LENGTH+1)]
+        self.custom_min = self.create_option_menu(variable=self.custom_min_var,
+                                                  length=length, column=0, 
+                                                  command=self.set_custom_option_min)
+        self.custom_min.grid_configure(padx=120, row=row, column=column, sticky="w")
 
         custom_dash = ck.CTkLabel(self.difficulty_window, text="-", width=1,
                                   text_font=KEYBOARD_FONT)
-        custom_dash.grid(padx=185, row=4, column=0, sticky="w")
+        custom_dash.grid(padx=185, row=row, column=column, sticky="w")
 
-        custom_max = self.create_option_menu(variable=self.custom_variable_max, length=length,
-                                             column=2, command=self.set_custom_option_max)
-        custom_max.grid_configure(padx=200, row=4, column=0, sticky="w")
+        self.custom_max = self.create_option_menu(variable=self.custom_max_var, 
+                                                  length=length, column=2,
+                                                  command=self.set_custom_option_max)
+        self.custom_max.grid_configure(padx=200, row=row, column=column, sticky="w")
 
         custom_text = ck.CTkLabel(self.difficulty_window, text="letter word", width=1, 
                                   text_font=DIFFICULTY_FONT)
-        custom_text.grid(padx=265, row=4, column=0, sticky="w")
+        custom_text.grid(padx=265, row=row, column=column, sticky="w")
 
     
     def play_game(self):
@@ -221,7 +230,7 @@ class Hangman():
         self.secret_word = random.choice(self.new_word_list)
         new_word = "_ " * len(self.secret_word)
         self.word_variable.set(new_word.strip())
-        print(f"{self.secret_word} ({len(self.secret_word)})")
+        # print(f"{self.secret_word} ({len(self.secret_word)})")
 
 
     def update_word(self, letter):
@@ -271,21 +280,33 @@ class Hangman():
         if self.display_difficulty.get() != self.selected_difficulty.get():
             self.display_difficulty.set(self.selected_difficulty.get())
             self.play_game()
-        self.difficulty_window.destroy() 
+        elif (self.current_min != self.custom_min_var.get() or
+                self.current_max != self.custom_max_var.get()):
+            self.current_min = self.custom_min_var.get()
+            self.current_max = self.custom_max_var.get()
+            self.play_game()
+        self.difficulty_window.withdraw() 
+
+
+    def track_difficulty(self):
+        if self.selected_difficulty.get() != self.custom:
+            self.custom_min.configure(state=ck.DISABLED)
+            self.custom_max.configure(state=ck.DISABLED)
+        else:
+            self.custom_min.configure(state=ck.NORMAL)
+            self.custom_max.configure(state=ck.NORMAL)
 
 
     def set_custom_option_min(self, choice):
-        DIFFICULTY["Custom"][0] = choice
-        print("min", DIFFICULTY["Custom"])
+        DIFFICULTY[self.custom][0] = int(choice)
+        length = [str(num) for num in range(int(choice), MAX_WORD_LENGTH+1)]
+        self.custom_max.configure(values=length)
 
-        return
 
     def set_custom_option_max(self, choice):
-        DIFFICULTY["Custom"][1] = choice
-        print("max", DIFFICULTY["Custom"])
-
-        return
-
+        DIFFICULTY[self.custom][1] = int(choice)
+        length = [str(num) for num in range(1, int(choice)+1)]
+        self.custom_min.configure(values=length)
 
 
 if __name__ == "__main__":
