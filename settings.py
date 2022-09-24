@@ -12,24 +12,25 @@ DISABLED_BUTTON_COLOR = "#FFFF33"
 KEYBOARD_FONT = ("Helvetica", 14)
 DIFFICULTY_FONT = ("Helvetica", 12)
 WORD_FONT = ("Helvetica", 24)
+RESULT_FONT = ("Helvetica", 20)
 
 # Window, frame and button sizes
 MAIN_WIDTH = 800
 MAIN_HEIGHT = 300
-POPUP_WIDTH = 200
-POPUP_HEIGHT = 200
+POPUP_WIDTH = 250
+POPUP_HEIGHT = 300
 BUTTON_CORNER_RADIUS = 10
 BUTTON_HEIGHT = 60
 BORDER_WIDTH = 3
 
 # Word properties
 ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-STATUS = ("Playing", "Lose", "Win")
+STATUS = ("Playing", "Lost", "Won")
 DIFFICULTY = {
               "Easy": (3, 5),
               "Normal": (6, 8),
-              "Hard": (9, 100),
-              "Custom": (3, 100)
+              "Hard": (9, 18),
+              "Custom": (3, 18)
               }
 MIN_WORD_LENGTH = 9
 NUMBER_OF_LIVES = 8
