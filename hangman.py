@@ -1,5 +1,6 @@
 from settings import *
 import customtkinter as ck
+from tkinter import messagebox
 import random
 
 
@@ -18,6 +19,7 @@ class Initialization:
         self.word_list = []
         self.new_word_list = []
         self.keyboard_buttons = {}
+        self.difficulty_radio = {}
         self.custom = "Custom"
         self.used_letters = set()
         self.word_variable = ck.StringVar()
@@ -26,7 +28,7 @@ class Initialization:
         self.new_difficulty = ck.StringVar(value="Normal")
         self.custom_min_var = ck.StringVar(value=DIFFICULTY[self.custom][0])
         self.custom_max_var = ck.StringVar(value=DIFFICULTY[self.custom][1])
-        self.lives_checkbox_var = ck.StringVar(value="off")
+        self.lives_checkbox_var = ck.StringVar(value="0")
         self.status = STATUS[0]
         self.lives = NUMBER_OF_LIVES
         self.custom_lives = self.lives
@@ -100,13 +102,10 @@ class PlayGame(CreateBase):
                 word = word.rstrip("\n").upper()
                 self.word_list.append(word)
         except:
-            print("Missing file")
-
-    
-    def play_game(self):
-        self.initialize_game()
-        self.get_word()
-        self.show_result()
+            choice = messagebox.showerror("File Missing", "Missing file: word_list.txt"
+                                          "\nPlease download it to the parent directory")
+            if choice == "ok":
+                self.window.quit()
 
 
     def initialize_game(self):
@@ -185,6 +184,12 @@ class PlayGame(CreateBase):
         self.rounds_won_label.configure(text=f"Won: {self.rounds_won}")
 
 
+    def play_game(self, *args):
+        self.initialize_game()
+        self.get_word()
+        self.show_result()
+
+
 class MainWindow(PlayGame):     
     def create_button(self, frame, text, row, column, font, command):
         button = ck.CTkButton(frame, text=text, border_width=BORDER_WIDTH,
@@ -204,7 +209,7 @@ class MainWindow(PlayGame):
                                                                text=letter, 
                                                                row=row, column=column,
                                                                font=KEYBOARD_FONT, 
-                                                               command= lambda letter=letter: 
+                                                               command=lambda letter=letter: 
                                                                self.update_word(letter))
             self.keyboard_buttons[letter].configure(height=BUTTON_HEIGHT)
             self.keyboard_frame.columnconfigure(column, weight=1)
@@ -217,7 +222,7 @@ class MainWindow(PlayGame):
                                              command=self.play_game)
         new_game_button.configure(fg_color=GREEN, text_color=INNER_TEXT_COLOR, 
                                   hover_color=GREEN_HOVER_COLOR)
-        new_game_button.grid_configure(pady=(10, 0))  
+        new_game_button.grid_configure(pady=(10, 0))
 
         settings_button = self.create_button(self.side_frame, text="Settings", 
                                              row=5, column=0, font=KEYBOARD_FONT, 
@@ -234,6 +239,10 @@ class MainWindow(PlayGame):
                               hover_color=RED_HOVER_COLOR)
 
 
+    def keyboard_bindings(self):
+        self.window.bind("<space>", self.play_game)
+
+
 class SettingsWindow(MainWindow):
     def __init__(self):
         super().__init__()
@@ -245,6 +254,7 @@ class SettingsWindow(MainWindow):
         self.settings_window.minsize(SETTINGS_WIDTH, SETTINGS_HEIGHT)
         self.settings_window.maxsize(SETTINGS_WIDTH, SETTINGS_HEIGHT)
         self.settings_window.title("Settings")
+        self.settings_window.grab_set()
         
         self.create_settings_labels()
         self.create_difficulty_list()
@@ -278,12 +288,13 @@ class SettingsWindow(MainWindow):
                 text = f"{key}:  {min_length}-{max_length} letter word"
             else: text = f"{key}: "
 
-            difficulty_radio = ck.CTkRadioButton(self.settings_window, 
-                                                 text=text, value=key,
-                                                 variable=self.new_difficulty, 
-                                                 text_font=SETTINGS_FONT,
-                                                 command=self.track_difficulty)
-            difficulty_radio.grid(row=row, column=column, padx=20, pady=5, sticky="w")
+            self.difficulty_radio[key] = ck.CTkRadioButton(self.settings_window, 
+                                                           text=text, value=key,
+                                                           variable=self.new_difficulty, 
+                                                           text_font=SETTINGS_FONT,
+                                                           command=self.track_difficulty)
+            self.difficulty_radio[key].grid(row=row, column=column, padx=20, pady=5, 
+                                            sticky="w")
             row += 1
 
 
@@ -320,22 +331,20 @@ class SettingsWindow(MainWindow):
     def create_lives_checkbox(self):
         self.lives_checkbox = ck.CTkCheckBox(self.settings_window, text="Cumulative",
                                              variable=self.lives_checkbox_var,
+                                             onvalue="1", offvalue="0",
                                              text_font=SETTINGS_FONT,
                                              command=self.update_lives_checkbox)
         self.lives_checkbox.grid(row=6, column=0, padx=300, pady=(5, 0), sticky="w")
-
-        if self.lives_checkbox_is_on == True:
-            self.lives_checkbox.select()
-        else:
-            self.lives_checkbox.deselect()
+        self.checkbox = bool(int(self.lives_checkbox_var.get()))
+        self.toggle_checkbox()
 
 
     def create_lives_slider(self):
-        lives_slider = ck.CTkSlider(self.settings_window, width=SLIDER_WIDTH,
-                                    from_=CUSTOM_LIVES[0], to=CUSTOM_LIVES[1],
-                                    command=self.update_custom_lives)
-        lives_slider.grid(row=7, column=0, padx=30, sticky="w")
-        lives_slider.set(self.lives)
+        self.lives_slider = ck.CTkSlider(self.settings_window, width=SLIDER_WIDTH,
+                                         from_=CUSTOM_LIVES[0], to=CUSTOM_LIVES[1],
+                                         command=self.update_custom_lives)
+        self.lives_slider.grid(row=7, column=0, padx=30, sticky="w")
+        self.lives_slider.set(self.lives)
 
         lives_min = ck.CTkLabel(self.settings_window, text=f"{CUSTOM_LIVES[0]}", width=1,
                                 text_font=DROPDOWN_FONT)
@@ -344,6 +353,15 @@ class SettingsWindow(MainWindow):
         lives_max = ck.CTkLabel(self.settings_window, text=f"{CUSTOM_LIVES[1]}", width=1,
                                 text_font=DROPDOWN_FONT)
         lives_max.grid(row=7, column=0, padx=330, sticky="w")
+
+
+    def create_save_button(self):
+        save_button = self.create_button(self.settings_window, text="Save",
+                                         row=8, column=0, font=KEYBOARD_FONT,
+                                         command=self.save_settings)
+        save_button.configure(fg_color=GREEN, text_color=INNER_TEXT_COLOR, 
+                              hover_color=GREEN_HOVER_COLOR)
+        save_button.grid_configure(padx=140, pady=(10, 0), sticky="w")
 
 
     def update_lives_checkbox(self):
@@ -360,8 +378,8 @@ class SettingsWindow(MainWindow):
 
 
     def show_custom_lives(self):
-        self.lives_label = ck.CTkLabel(self.settings_window, text=f"[ {self.lives} ]", width=1,
-                                       text_font=SETTINGS_FONT, relief=ck.RIDGE)
+        self.lives_label = ck.CTkLabel(self.settings_window, text=f"[ {self.lives} ]",
+                                       width=1, text_font=SETTINGS_FONT, relief=ck.RIDGE)
         self.lives_label.grid(row=6, column=0, padx=230, pady=5, sticky="w")
 
 
@@ -386,34 +404,49 @@ class SettingsWindow(MainWindow):
         self.custom_min.configure(values=length)
 
 
-    def create_save_button(self):
-        save_button = self.create_button(self.settings_window, text="Save",
-                                         row=11, column=0, font=KEYBOARD_FONT,
-                                         command=self.save_settings)
-        save_button.configure(fg_color=GREEN, text_color=INNER_TEXT_COLOR, 
-                              hover_color=GREEN_HOVER_COLOR)
-        save_button.grid_configure(padx=140, pady=(10, 0), sticky="w")
+    def toggle_checkbox(self):
+        if self.lives_checkbox_is_on == True:
+            self.lives_checkbox.select()
+        else:
+            self.lives_checkbox.deselect()
 
 
     def save_settings(self):
-        if self.current_difficulty.get() != self.new_difficulty.get():
-            self.current_difficulty.set(self.new_difficulty.get())
-            self.play_game()
+        reset = 0
+        if self.custom_lives != self.lives and self.slider_used == True:
+            reset = 1
+        elif self.current_difficulty.get() != self.new_difficulty.get():
+            reset = 1
         elif (self.current_min != self.custom_min_var.get() or
                 self.current_max != self.custom_max_var.get()):
+            reset = 1
+        elif self.checkbox != bool(int(self.lives_checkbox_var.get())):
+            reset = 1
+
+        self.confirm_save(reset)
+        self.settings_window.destroy()
+        self.slider_used = False
+
+
+    def confirm_save(self, reset):
+        choice = messagebox.askyesno("Confirmation", "Changes may cause progress to reset. "
+                                     "Do you want to continue?")
+        if reset == 1 and choice == 1:
+            self.custom_lives = self.lives
+            self.current_difficulty.set(self.new_difficulty.get())
+            self.lives_text_label.configure(text=f"Lives: {self.custom_lives}")
             self.current_min = self.custom_min_var.get()
             self.current_max = self.custom_max_var.get()
-            self.play_game()
-        if self.custom_lives != self.lives and self.slider_used == True:
-            self.custom_lives = self.lives
-            self.lives_text_label.configure(text=f"Lives: {self.custom_lives}")
             self.round = 1
             self.rounds_won = 0
-            self.play_game()      
-        self.update_lives_checkbox()
-        self.settings_window.withdraw()
-        self.slider_used = False
-        
+            self.update_lives_checkbox()
+            self.play_game()
+        else:
+            self.difficulty_radio[self.current_difficulty.get()].invoke()
+            self.lives = self.custom_lives
+            self.lives_checkbox_is_on = self.checkbox
+            self.toggle_checkbox()
+
 
 class Hangman(SettingsWindow):
     def __init__(self):
@@ -424,8 +457,9 @@ class Hangman(SettingsWindow):
         self.create_side_buttons()
         self.create_word_labels()
         self.create_side_labels()
+        self.keyboard_bindings()
         self.play_game()
-        
+
 
 if __name__ == "__main__":
     hangman = Hangman()
