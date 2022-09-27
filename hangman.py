@@ -314,8 +314,9 @@ class Hangman(Settings):
             self.keyboard_buttons[letter].configure(height=BUTTON_HEIGHT)
             self.keyboard_frame.columnconfigure(column, weight=1)
 
-            self.window.bind(f"{letter.lower()}", self.keybind_letters)
-            self.window.bind(f"{letter.upper()}", self.keybind_letters)
+            self.window.bind(f"{letter.lower()}", 
+                                lambda event: self.update_word(event.char.upper()))
+            self.window.bind(f"{letter.upper()}", lambda event: self.update_word(event.char))
             column += 1
 
 
@@ -344,10 +345,6 @@ class Hangman(Settings):
 
     def keybind_space(self):
         self.window.bind("<space>", self.play_game)
-
-
-    def keybind_letters(self, event):
-        self.update_word(event.char.upper())
 
 
     def play_game(self, *args):
