@@ -383,7 +383,7 @@ class Hangman(Settings):
         self.secret_word = random.choice(self.new_word_list)
         new_word = "_ " * len(self.secret_word)
         self.word_variable.set(new_word.strip())
-        print(f"{self.secret_word} ({len(self.secret_word)})")
+        # print(f"{self.secret_word} ({len(self.secret_word)})")
 
 
     def update_word(self, letter):
