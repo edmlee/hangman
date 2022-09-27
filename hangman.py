@@ -32,6 +32,7 @@ class Initialization:
         self.status = STATUS[0]
         self.lives = NUMBER_OF_LIVES
         self.custom_lives = self.lives
+        self.lives_setting = self.lives
         self.lives_checkbox_is_on = False
         self.round = 1
         self.rounds_won = 0
@@ -213,6 +214,9 @@ class MainWindow(PlayGame):
                                                                self.update_word(letter))
             self.keyboard_buttons[letter].configure(height=BUTTON_HEIGHT)
             self.keyboard_frame.columnconfigure(column, weight=1)
+
+            self.window.bind(f"{letter.lower()}", self.keybind_letters)
+            self.window.bind(f"{letter.upper()}", self.keybind_letters)
             column += 1
 
 
@@ -239,8 +243,12 @@ class MainWindow(PlayGame):
                               hover_color=RED_HOVER_COLOR)
 
 
-    def keyboard_bindings(self):
+    def keybind_space(self):
         self.window.bind("<space>", self.play_game)
+
+
+    def keybind_letters(self, event):
+        self.update_word(event.char.upper())
 
 
 class SettingsWindow(MainWindow):
@@ -378,8 +386,9 @@ class SettingsWindow(MainWindow):
 
 
     def show_custom_lives(self):
-        self.lives_label = ck.CTkLabel(self.settings_window, text=f"[ {self.lives} ]",
-                                       width=1, text_font=SETTINGS_FONT, relief=ck.RIDGE)
+        self.lives_label = ck.CTkLabel(self.settings_window, 
+                                       text=f"[ {self.lives_setting} ]",
+                                       width=1, text_font=SETTINGS_FONT)
         self.lives_label.grid(row=6, column=0, padx=230, pady=5, sticky="w")
 
 
@@ -432,8 +441,9 @@ class SettingsWindow(MainWindow):
         choice = messagebox.askyesno("Confirmation", "Changes may cause progress to reset. "
                                      "Do you want to continue?")
         if reset == 1 and choice == 1:
-            self.custom_lives = self.lives
             self.current_difficulty.set(self.new_difficulty.get())
+            self.custom_lives = self.lives
+            self.lives_setting = self.lives
             self.lives_text_label.configure(text=f"Lives: {self.custom_lives}")
             self.current_min = self.custom_min_var.get()
             self.current_max = self.custom_max_var.get()
@@ -457,7 +467,7 @@ class Hangman(SettingsWindow):
         self.create_side_buttons()
         self.create_word_labels()
         self.create_side_labels()
-        self.keyboard_bindings()
+        self.keybind_space()
         self.play_game()
 
 
