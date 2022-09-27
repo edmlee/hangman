@@ -1,6 +1,6 @@
 from settings import *
-import customtkinter as ck
 from tkinter import messagebox
+import customtkinter as ck
 import random
 
 
@@ -34,15 +34,35 @@ class Initialization:
         self.custom_lives = self.lives
         self.lives_setting = self.lives
         self.lives_checkbox_is_on = False
+        self.current_min = self.custom_min_var.get()
+        self.current_max = self.custom_max_var.get()
         self.round = 1
         self.rounds_won = 0
         self.is_lost = False
         self.slider_used = False
 
 
-class CreateBase(Initialization):
+class Base(Initialization):
     def __init__(self):
         super().__init__()
+        self.load_word_list()
+        self.create_frames()
+        self.create_word_labels()
+        self.create_side_labels()
+
+
+    def load_word_list(self):
+        try:
+            with open("word_list.txt", "r") as file:
+                words = file.readlines()
+            for word in words:
+                word = word.rstrip("\n").upper()
+                self.word_list.append(word)
+        except:
+            choice = messagebox.showerror("File Missing", "Missing file: word_list.txt"
+                                          "\nPlease download it to the parent directory")
+            if choice == "ok":
+                self.window.quit()
 
 
     def create_frames(self):
@@ -90,108 +110,6 @@ class CreateBase(Initialization):
         self.rounds_won_label.grid(row=4, column=0, padx=10)
 
 
-class PlayGame(CreateBase):
-    def __init__(self):
-        super().__init__()
-
-    
-    def load_word_list(self):
-        try:
-            with open("word_list.txt", "r") as file:
-                words = file.readlines()
-            for word in words:
-                word = word.rstrip("\n").upper()
-                self.word_list.append(word)
-        except:
-            choice = messagebox.showerror("File Missing", "Missing file: word_list.txt"
-                                          "\nPlease download it to the parent directory")
-            if choice == "ok":
-                self.window.quit()
-
-
-    def initialize_game(self):
-        self.new_word_list = []
-        self.used_letters = set()
-        self.status = STATUS[0]
-
-        if self.is_lost == True:
-            self.round = 1
-            self.rounds_won = 0
-            self.is_lost = False
-        if self.lives_checkbox_is_on == False or self.lives == 0:
-            self.lives = self.custom_lives
-        self.lives_text_label.configure(text=f"Lives: {self.lives}")
-
-        for letter in self.keyboard_buttons:
-            self.keyboard_buttons[letter].configure(fg_color=DARK_BLUE, state=ck.NORMAL)
-        self.round_label.configure(text=f"Round {self.round}")
-        self.round +=1
-
-
-    def get_word(self):
-        for word in self.word_list:
-            if (len(word) >= DIFFICULTY[self.current_difficulty.get()][0]
-                    and len(word) <= DIFFICULTY[self.current_difficulty.get()][1]):
-                self.new_word_list.append(word)
-        self.secret_word = random.choice(self.new_word_list)
-        new_word = "_ " * len(self.secret_word)
-        self.word_variable.set(new_word.strip())
-        # print(f"{self.secret_word} ({len(self.secret_word)})")
-
-
-    def update_word(self, letter):
-        word = self.word_variable.get().split(" ")
-        for index, char in enumerate(self.secret_word):
-            if letter == char:
-                word[index] = letter
-        self.word_variable.set(" ".join(word))
-        self.update_lives(word, letter)
-
-
-    def update_lives(self, word, letter):
-        if letter not in self.used_letters and self.status == STATUS[0]:
-            self.used_letters.add(letter)
-            if letter not in self.secret_word:
-                self.lives -= 1
-            self.lives_text_label.configure(text=f"Lives: {self.lives}")
-            self.keyboard_buttons[letter].configure(fg_color=DISABLED_BUTTON_COLOR, 
-                                                    state=ck.DISABLED)
-        self.update_result(word)
-
-        
-    def update_result(self, word):
-        if self.lives == 0:
-            self.status = STATUS[1]
-            self.word_variable.set(" ".join([letter for letter in self.secret_word]))
-        elif set(word).issubset(self.used_letters):
-            self.status = STATUS[2]
-        if self.status != STATUS[0]:
-            for letter in self.keyboard_buttons:
-                self.keyboard_buttons[letter].configure(state=ck.DISABLED)
-            self.show_result()
-
-
-    def show_result(self):
-        if self.status == STATUS[1]:
-            self.result_variable.set("You Lost!")
-            self.result_label.configure(text_color=RED)
-            self.is_lost = True
-        elif self.status == STATUS[2]:
-            self.result_variable.set("You Won!")
-            self.result_label.configure(text_color=GREEN)
-            self.rounds_won += 1
-        else:
-            self.result_variable.set("")
-        self.rounds_won_label.configure(text=f"Won: {self.rounds_won}")
-
-
-    def play_game(self, *args):
-        self.initialize_game()
-        self.get_word()
-        self.show_result()
-
-
-class MainWindow(PlayGame):     
     def create_button(self, frame, text, row, column, font, command):
         button = ck.CTkButton(frame, text=text, border_width=BORDER_WIDTH,
                               corner_radius=BUTTON_CORNER_RADIUS, text_font=font,
@@ -200,63 +118,12 @@ class MainWindow(PlayGame):
         return button
 
 
-    def create_keyboard_buttons(self):
-        row, column = 0, 0
-        for letter in ALPHABET:
-            if column == len(ALPHABET)/2:
-                row += 1
-                column = 0
-            self.keyboard_buttons[letter] = self.create_button(self.keyboard_frame,
-                                                               text=letter, 
-                                                               row=row, column=column,
-                                                               font=KEYBOARD_FONT, 
-                                                               command=lambda letter=letter: 
-                                                               self.update_word(letter))
-            self.keyboard_buttons[letter].configure(height=BUTTON_HEIGHT)
-            self.keyboard_frame.columnconfigure(column, weight=1)
-
-            self.window.bind(f"{letter.lower()}", self.keybind_letters)
-            self.window.bind(f"{letter.upper()}", self.keybind_letters)
-            column += 1
-
-
-    def create_side_buttons(self):
-        new_game_button = self.create_button(self.side_frame, text="New Game", 
-                                             row=0, column=0, font=KEYBOARD_FONT, 
-                                             command=self.play_game)
-        new_game_button.configure(fg_color=GREEN, text_color=INNER_TEXT_COLOR, 
-                                  hover_color=GREEN_HOVER_COLOR)
-        new_game_button.grid_configure(pady=(10, 0))
-
-        settings_button = self.create_button(self.side_frame, text="Settings", 
-                                             row=5, column=0, font=KEYBOARD_FONT, 
-                                             command=self.settings)
-        settings_button.configure(fg_color=SETTINGS_COLOR, text_color=INNER_TEXT_COLOR, 
-                                  hover_color=SETTINGS_COLOR)
-        settings_button.grid_configure(pady=(15, 20))
-
-        quit_button = self.create_button(self.side_frame, text="Quit",
-                                         row=6, column=0, 
-                                         font=KEYBOARD_FONT, 
-                                         command=self.window.quit)
-        quit_button.configure(fg_color=RED, text_color=INNER_TEXT_COLOR, 
-                              hover_color=RED_HOVER_COLOR)
-
-
-    def keybind_space(self):
-        self.window.bind("<space>", self.play_game)
-
-
-    def keybind_letters(self, event):
-        self.update_word(event.char.upper())
-
-
-class SettingsWindow(MainWindow):
+class Settings(Base):
     def __init__(self):
         super().__init__()
 
 
-    def settings(self):
+    def settings_window(self):
         self.settings_window = ck.CTkToplevel()
         self.settings_window.geometry(f"{SETTINGS_WIDTH}x{SETTINGS_HEIGHT}")
         self.settings_window.minsize(SETTINGS_WIDTH, SETTINGS_HEIGHT)
@@ -264,6 +131,9 @@ class SettingsWindow(MainWindow):
         self.settings_window.title("Settings")
         self.settings_window.grab_set()
         
+        self.custom_min_var = ck.StringVar(value=self.current_min)
+        self.custom_max_var = ck.StringVar(value=self.current_max)
+
         self.create_settings_labels()
         self.create_difficulty_list()
         self.create_custom_option()
@@ -272,9 +142,6 @@ class SettingsWindow(MainWindow):
         self.create_save_button()
         self.show_custom_lives()
         self.track_difficulty()
-
-        self.current_min = self.custom_min_var.get()
-        self.current_max = self.custom_max_var.get()
 
 
     def create_settings_labels(self):
@@ -316,6 +183,7 @@ class SettingsWindow(MainWindow):
 
     def create_custom_option(self):
         row, column = 5, 0
+        
         length = [str(num) for num in range(1, MAX_WORD_LENGTH+1)]
         self.custom_min = self.create_option_menu(variable=self.custom_min_var,
                                                   length=length, column=0, 
@@ -402,12 +270,14 @@ class SettingsWindow(MainWindow):
 
 
     def set_custom_option_min(self, choice):
+        self.choice_min = choice
         DIFFICULTY[self.custom][0] = int(choice)
         length = [str(num) for num in range(int(choice), MAX_WORD_LENGTH+1)]
         self.custom_max.configure(values=length)
 
 
     def set_custom_option_max(self, choice):
+        self.choice_max = choice
         DIFFICULTY[self.custom][1] = int(choice)
         length = [str(num) for num in range(1, int(choice)+1)]
         self.custom_min.configure(values=length)
@@ -418,6 +288,148 @@ class SettingsWindow(MainWindow):
             self.lives_checkbox.select()
         else:
             self.lives_checkbox.deselect()
+
+
+class Hangman(Settings):
+    def __init__(self):
+        super().__init__()
+        self.create_keyboard_buttons()
+        self.create_side_buttons()
+        self.keybind_space()
+        self.play_game()
+        
+
+    def create_keyboard_buttons(self):
+        row, column = 0, 0
+        for letter in ALPHABET:
+            if column == len(ALPHABET)/2:
+                row += 1
+                column = 0
+            self.keyboard_buttons[letter] = self.create_button(self.keyboard_frame,
+                                                               text=letter, 
+                                                               row=row, column=column,
+                                                               font=KEYBOARD_FONT, 
+                                                               command=lambda letter=letter: 
+                                                               self.update_word(letter))
+            self.keyboard_buttons[letter].configure(height=BUTTON_HEIGHT)
+            self.keyboard_frame.columnconfigure(column, weight=1)
+
+            self.window.bind(f"{letter.lower()}", self.keybind_letters)
+            self.window.bind(f"{letter.upper()}", self.keybind_letters)
+            column += 1
+
+
+    def create_side_buttons(self):
+        new_game_button = self.create_button(self.side_frame, text="New Game", 
+                                             row=0, column=0, font=KEYBOARD_FONT, 
+                                             command=self.play_game)
+        new_game_button.configure(fg_color=GREEN, text_color=INNER_TEXT_COLOR, 
+                                  hover_color=GREEN_HOVER_COLOR)
+        new_game_button.grid_configure(pady=(10, 0))
+
+        settings_button = self.create_button(self.side_frame, text="Settings", 
+                                             row=5, column=0, font=KEYBOARD_FONT, 
+                                             command=self.settings_window)
+        settings_button.configure(fg_color=SETTINGS_COLOR, text_color=INNER_TEXT_COLOR, 
+                                  hover_color=SETTINGS_COLOR)
+        settings_button.grid_configure(pady=(15, 20))
+
+        quit_button = self.create_button(self.side_frame, text="Quit",
+                                         row=6, column=0, 
+                                         font=KEYBOARD_FONT, 
+                                         command=self.window.quit)
+        quit_button.configure(fg_color=RED, text_color=INNER_TEXT_COLOR, 
+                              hover_color=RED_HOVER_COLOR)
+
+
+    def keybind_space(self):
+        self.window.bind("<space>", self.play_game)
+
+
+    def keybind_letters(self, event):
+        self.update_word(event.char.upper())
+
+
+    def play_game(self, *args):
+        self.initialize_game()
+        self.get_word()
+        self.show_result()
+
+
+    def initialize_game(self):
+        self.new_word_list = []
+        self.used_letters = set()
+        self.status = STATUS[0]
+
+        if self.is_lost == True:
+            self.round = 1
+            self.rounds_won = 0
+            self.is_lost = False
+        if self.lives_checkbox_is_on == False or self.lives == 0:
+            self.lives = self.custom_lives
+        self.lives_text_label.configure(text=f"Lives: {self.lives}")
+
+        for letter in self.keyboard_buttons:
+            self.keyboard_buttons[letter].configure(fg_color=DARK_BLUE, state=ck.NORMAL)
+        self.round_label.configure(text=f"Round {self.round}")
+        self.round +=1
+
+
+    def get_word(self):
+        for word in self.word_list:
+            if (len(word) >= DIFFICULTY[self.current_difficulty.get()][0]
+                    and len(word) <= DIFFICULTY[self.current_difficulty.get()][1]):
+                self.new_word_list.append(word)
+        self.secret_word = random.choice(self.new_word_list)
+        new_word = "_ " * len(self.secret_word)
+        self.word_variable.set(new_word.strip())
+        print(f"{self.secret_word} ({len(self.secret_word)})")
+
+
+    def update_word(self, letter):
+        word = self.word_variable.get().split(" ")
+        for index, char in enumerate(self.secret_word):
+            if letter == char:
+                word[index] = letter
+        self.word_variable.set(" ".join(word))
+        self.update_lives(word, letter)
+
+
+    def update_lives(self, word, letter):
+        if letter not in self.used_letters and self.status == STATUS[0]:
+            self.used_letters.add(letter)
+            if letter not in self.secret_word:
+                self.lives -= 1
+            self.lives_text_label.configure(text=f"Lives: {self.lives}")
+            self.keyboard_buttons[letter].configure(fg_color=DISABLED_BUTTON_COLOR, 
+                                                    state=ck.DISABLED)
+        self.update_result(word)
+
+        
+    def update_result(self, word):
+        if self.lives == 0:
+            self.status = STATUS[1]
+            self.word_variable.set(" ".join([letter for letter in self.secret_word]))
+        elif set(word).issubset(self.used_letters):
+            self.status = STATUS[2]
+        if self.status != STATUS[0]:
+            for letter in self.keyboard_buttons:
+                self.keyboard_buttons[letter].configure(state=ck.DISABLED)
+            self.show_result()
+
+
+    def show_result(self):
+        if self.status == STATUS[1]:
+            self.result_variable.set("You Lost!")
+            self.result_label.configure(text_color=RED)
+            self.is_lost = True
+        elif self.status == STATUS[2]:
+            self.result_variable.set("You Won!")
+            self.result_label.configure(text_color=GREEN)
+            self.rounds_won += 1
+        else:
+            self.result_variable.set("")
+        self.rounds_won_label.configure(text=f"Won: {self.rounds_won}")
 
 
     def save_settings(self):
@@ -456,19 +468,6 @@ class SettingsWindow(MainWindow):
             self.lives = self.custom_lives
             self.lives_checkbox_is_on = self.checkbox
             self.toggle_checkbox()
-
-
-class Hangman(SettingsWindow):
-    def __init__(self):
-        super().__init__()
-        self.load_word_list()
-        self.create_frames()
-        self.create_keyboard_buttons()
-        self.create_side_buttons()
-        self.create_word_labels()
-        self.create_side_labels()
-        self.keybind_space()
-        self.play_game()
 
 
 if __name__ == "__main__":

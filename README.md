@@ -5,11 +5,12 @@
 - Interactive GUI for endless gameplay
 - Full alphabet buttons displayed on-screen
 - Easily track which letters were used
+- Play with either a physical keyboard or use the on-screen keyboard
+- Press the `spacebar` key to instantly start a new game
 - Tracks statistics such as rounds played, lives remaining and rounds won
 - Enter the `Settings` menu to change the difficulty, number of lives and game mode
 - The secret word will be revealed whether the round is lost or won
 - Resizable game screen
-- Press the `spacebar` key to instantly start a new game
 
 ## Settings
 - Choose from 4 pre-defined difficulties or customize your own

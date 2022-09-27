@@ -9,11 +9,11 @@ RED = "red"
 RED_HOVER_COLOR = "#800000"
 SETTINGS_COLOR = "orange"
 DISABLED_BUTTON_COLOR = "#FFFF33"
+WORD_FONT = ("Helvetica", 24)
+RESULT_FONT = ("Helvetica", 20)
 KEYBOARD_FONT = ("Helvetica", 14)
 SETTINGS_FONT = ("Helvetica", 12)
 DROPDOWN_FONT = ("Helvetica", 11)
-WORD_FONT = ("Helvetica", 24)
-RESULT_FONT = ("Helvetica", 20)
 
 # Window, frame and button sizes
 MAIN_WIDTH = 800
@@ -28,7 +28,6 @@ SLIDER_WIDTH =300
 # Word properties
 ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 STATUS = ("Playing", "Lost", "Won")
-MAX_WORD_LENGTH = 18
 DIFFICULTY = {
               "Easy": (3, 5),
               "Normal": (6, 8),
@@ -36,5 +35,6 @@ DIFFICULTY = {
               "Very Hard": (12, 18),
               "Custom": [3, 18]
               }
+MAX_WORD_LENGTH = 18
 NUMBER_OF_LIVES = 8
 CUSTOM_LIVES = (1, 100)
